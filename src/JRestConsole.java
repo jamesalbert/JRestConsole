@@ -10,17 +10,17 @@ import net.miginfocom.swing.MigLayout;
 class JRestConsole extends JFrame {
 	private static final long serialVersionUID = 1L;
 	private JLabel urlLabel, responseLabel, timeoutLabel, acceptLabel,
-			payloadLabel;
+			payloadLabel, contentLabel, timeLabel;
 	private JTextArea response, payload;
 	private JScrollPane responsePane, payloadPane;
-	private JTextField urlField, timeoutField, acceptField;
+	private JTextField urlField, timeoutField, acceptField, contentField;
 	private JButton getButton, postButton, putButton, deleteButton,
 			optionsButton, headButton, traceButton, copyButton;
-	private JPanel urlPanel, responsePanel, confPanel;
+	private JPanel urlPanel, responsePanel;
 	private final int WINDOW_WIDTH = 600;
 	private final int WINDOW_HEIGHT = 480;
 	private final int RESPONSE_WIDTH = 50;
-	private final int RESPONSE_HEIGHT = 20;
+	private final int RESPONSE_HEIGHT = 30;
 	private final int PAYLOAD_WIDTH = 20;
 	private final int PAYLOAD_HEIGHT = 15;
 
@@ -41,6 +41,8 @@ class JRestConsole extends JFrame {
 		this.timeoutLabel = new JLabel("timeout:");
 		this.acceptLabel = new JLabel("accept:");
 		this.payloadLabel = new JLabel("request payload:");
+		this.contentLabel = new JLabel("content type:");
+		this.timeLabel = new JLabel("time: ");
 
 		// response textarea
 		this.response = new JTextArea(this.RESPONSE_HEIGHT, this.RESPONSE_WIDTH);
@@ -57,6 +59,7 @@ class JRestConsole extends JFrame {
 		this.urlField = new JTextField("http://localhost:5000/", 23);
 		this.timeoutField = new JTextField("60", 4);
 		this.acceptField = new JTextField("application/json", 20);
+		this.contentField = new JTextField("application/json", 20);
 
 		// buttons
 		this.getButton = new JButton("get");
@@ -91,12 +94,10 @@ class JRestConsole extends JFrame {
 		// panels
 		this.urlPanel = new JPanel(new MigLayout());
 		this.responsePanel = new JPanel(new MigLayout());
-		this.confPanel = new JPanel(new MigLayout());
 
 		// panel backgrounds
 		this.urlPanel.setBackground(Color.white);
 		this.responsePanel.setBackground(Color.white);
-		this.confPanel.setBackground(Color.white);
 
 		// panel construction
 		this.urlPanel.add(this.urlLabel);
@@ -108,19 +109,21 @@ class JRestConsole extends JFrame {
 		this.urlPanel.add(this.optionsButton);
 		this.urlPanel.add(this.headButton, "cell 0 2");
 		this.urlPanel.add(this.traceButton, "cell 0 2,wrap");
-		this.responsePanel.add(this.responseLabel);
-		this.responsePanel.add(this.copyButton, "cell 0 0,wrap");
-		this.responsePanel.add(this.responsePane);
+		this.responsePanel.add(this.responseLabel, "wrap");
+		this.responsePanel.add(this.timeLabel, "wrap");
+		this.responsePanel.add(this.responsePane, "wrap");
+		this.responsePanel.add(this.copyButton);
 		this.urlPanel.add(this.timeoutLabel, "wrap");
 		this.urlPanel.add(this.timeoutField, "wrap");
 		this.urlPanel.add(this.acceptLabel, "wrap");
 		this.urlPanel.add(this.acceptField, "wrap");
+		this.urlPanel.add(this.contentLabel, "wrap");
+		this.urlPanel.add(this.contentField, "wrap");
 		this.urlPanel.add(this.payloadLabel, "wrap");
 		this.urlPanel.add(this.payloadPane);
 
 		// frame construction
 		add(this.urlPanel);
-		add(this.confPanel);
 		add(this.responsePanel);
 		pack();
 
@@ -145,11 +148,17 @@ class JRestConsole extends JFrame {
 			String reqPayload = payload.getText();
 			String reqTimeout = timeoutField.getText();
 			String reqAccept = acceptField.getText();
+			String reqContent = contentField.getText();
 			opts.put("timeout", reqTimeout);
 			opts.put("accept", reqAccept);
+			opts.put("content", reqContent);
 			RequestManager reqman = new RequestManager();
 			try {
+				long startTime = System.nanoTime();
 				String[] res = reqman.send(urlstr, reqtype, reqPayload, opts);
+				long endTime = System.nanoTime();
+				double duration = (double)(endTime - startTime) / 10000000;
+				timeLabel.setText(String.format("time: %.2f seconds", duration));
 				if (reqman.isJson(res[0])) {
 					response.setText(reqman.jsonFormatter(res[0]));
 				} else if (reqman.isHtml(res[0])) {
